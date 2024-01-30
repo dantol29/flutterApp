@@ -68,18 +68,6 @@ class _MyHomePageState extends State<MyHomePage> {
     _refreshMeals();
   }
 
-  Future <void> _compareItem(int id) async {
-    int i = 0;
-    int len = _journals.length;
-    print("$len");
-    while (i < len) {
-      if (_journals[i]['title'] == _journals[id]['title']) {
-        debugPrint("$i found");
-      }
-      i++;
-    }
-  }
-
   Future <void> _deleteItem(int id) async {
     await SQLHelper.deleteItem(id);
     _refreshJournals();
@@ -168,6 +156,42 @@ class _MyHomePageState extends State<MyHomePage> {
             ));
   }
 
+  void _showResults(int id) async {
+    int i = 0;
+    String meal = "No meals :(";
+    int len = _meals.length;
+    print("$len");
+    while (i < len) {
+      if (_meals[i]['ingredient'] == _journals[id]['title']) {
+        debugPrint("$i found");
+        meal = _meals[i]['meal_name'];
+        break ;
+      }
+      i++;
+    }
+    showModalBottomSheet(
+      context: context,
+      elevation: 5,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        padding: EdgeInsets.only(
+          top: 60,
+          left: 60,
+          right: 60,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 120,
+        ),
+        child: Text(
+            meal,
+            style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        ),
+        ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -177,22 +201,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2, // Number of tabs
-      child: Scaffold(
+    return MaterialApp(
+      title: "SQL",
+      theme:ThemeData(
+          colorSchemeSeed:
+          const Color(0xff6750a4),
+          useMaterial3: true
+      ),
+      home: Scaffold(
         appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           title: const Text("SQL"),
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.note)),
-              Tab(icon: Icon(Icons.food_bank)),
-            ],
-          ),
         ),
-        body: TabBarView(
-          children: [
-            ListView.builder(
+        body: ListView.builder(
               itemCount: _journals.length,
               itemBuilder: (context, index) => Card(
                 color: Colors.orange[200],
@@ -212,7 +232,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         IconButton(
                           icon: const Icon(Icons.delete),
                           onPressed: () =>
-                              _deleteItem(_journals[index]['id']),
+                             // _deleteItem(_journals[index]['id']),
+                                _showResults(index),
                         ),
                       ],
                     ),
@@ -220,47 +241,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
             ),
-            // Second Tab View
-            ListView.builder(
-              itemCount: _meals.length,
-              itemBuilder: (context, index) => Card(
-                color: Colors.green[200],
-                margin: const EdgeInsets.all(15),
-                child: ListTile(
-                  title: Text(_meals[index]['meal_name']),
-                  subtitle: Text(_meals[index]['ingredient']),
-                  trailing: SizedBox(
-                    width: 100,
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () =>
-                              _showForm(_meals[index]['id'], 1),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () =>
-                              _deleteMeal(_meals[index]['id']),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            // Get the current tab index
-
-            // Show the form based on the current tab index
-            _showForm(null, 0);
-          },
-          child: const Icon(Icons.add),
-        ),
+        backgroundColor: const Color.fromRGBO(82, 170, 94, 1.0),
+        onPressed: () => _showForm(null, 1),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
-    );
+
+        ),
+      );
   }
 }
