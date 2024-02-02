@@ -78,7 +78,6 @@ class _MyHomePageState extends State<MyHomePage> {
       isLoading = true; // Set loading state to true
     });
     print(getTitles(_ingredients));
-    //const apiKey = "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";
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ${dotenv.env['token']}'
