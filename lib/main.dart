@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hello_world/sql_helper.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'meals.dart';
+
 
 Future<void> main() async {
   await dotenv.load();
@@ -39,11 +39,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  String responseText = '';
+  int _currentIndex = 0;
   bool isSpicy = false;
   bool isVegan = false;
-  bool isLoading = false;
-  int _currentIndex = 0;
+
+  // Method to navigate to AnotherScreen
+  void _navigateToAnotherScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AnotherScreen(ingredientList: _ingredients),),
+    );
+  }
 
   void _refreshJournals() async {
     final data = await SQLHelper.getItems();
@@ -67,67 +74,6 @@ class _MyHomePageState extends State<MyHomePage> {
     await SQLHelper.createItem(
         _titleController.text, _descriptionController.text);
     _refreshJournals();
-  }
-
-  List<String> getTitles(List<Map<String, dynamic>> journals) {
-    return journals.map((journal) => journal['title'] as String).toList();
-  }
-  
-  void completionFun() async {
-    setState(() {
-      isLoading = true; // Set loading state to true
-    });
-    print(getTitles(_ingredients));
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${dotenv.env['token']}'
-    };
-    final body = json.encode(
-      {
-        "max_tokens": 60,
-        "model": "gpt-3.5-turbo",
-        "n": 1,
-        "temperature": 1,
-        "top_p": 1,
-        "frequency_penalty": 0,
-        "presence_penalty": 0,
-        "messages": [
-          {
-            "role": "system",
-            "content": """Given the ingredients: ${getTitles(_ingredients)}, suggest some meals I can cook. If it is not enouqh, say so. 
-            Write only the name of the meal and brief description that has no more than 7 words. Use ONLY provided ingredients!
-            Some flags for you: is spicy - $isSpicy, is vegan - $isVegan
-            Maximum 3 meals!
-            """
-          }
-        ]
-      },
-    );
-    try {
-      final response = await http.post(
-        Uri.parse('https://api.openai.com/v1/chat/completions'),
-        headers: headers,
-        body: body,
-      );
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        final result = jsonResponse['choices'][0]['message'];
-        setState(() {
-          responseText = result.toString();
-          responseText = responseText.substring(responseText.indexOf("1"));
-        });
-        print(result);
-      } else {
-          responseText = 'Error: ${response.statusCode}';
-          //debugPrint(responseText);
-      }
-    } catch (e) {
-        responseText = 'Error: $e';
-      //debugPrint(responseText);
-    }
-    setState(() {
-      isLoading = false; // Set loading state to true
-    });
   }
 
   void _showForm(int? id) async {
@@ -252,9 +198,15 @@ class _MyHomePageState extends State<MyHomePage> {
     _refreshJournals();
   }
 
+  String capitalizeFirstLetter(String input) {
+    return input.isNotEmpty ? input[0].toUpperCase() + input.substring(1) : input;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = Theme
+        .of(context)
+        .colorScheme;
     return MaterialApp(
       home: Scaffold(
         bottomNavigationBar: BottomNavigationBar(
@@ -296,18 +248,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 Expanded(
                   child: buildListView(),
                 ),
-                isLoading ? const CircularProgressIndicator() : Text(
-                  responseText,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
                 buttons(),
               ],
             ),
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.purple[600],
-          onPressed: () => _showForm(null),
+          backgroundColor: Colors.deepPurpleAccent,
+          onPressed: () async {
+            _showForm(null);
+          },
           child: const Icon(Icons.add, color: Colors.white, size: 28),
         ),
       ),
@@ -315,31 +265,44 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget buttons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ElevatedButton(
-          onPressed: () => completionFun(),
-          style: ElevatedButton.styleFrom(textStyle: const TextStyle(fontSize: 30)),
-          child: const Text('Magic'),
-        ),
-        const SizedBox(width: 10), // Adjust the spacing between buttons
-        ElevatedButton(
-          onPressed: () {
-            setState(() {
-              responseText = ' ';
-            });
-          },
-          style: ElevatedButton.styleFrom(textStyle: const TextStyle(fontSize: 30)),
-          child: const Text('Clear'),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15.0), // Add bottom padding
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              _navigateToAnotherScreen();
+            },
+            style: ElevatedButton.styleFrom(
+              primary: Colors.deepPurpleAccent, // Adjust the button color
+              onPrimary: Colors.white, // Change the text color
+              textStyle: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 20), // Adjust padding values
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10), // Add rounded corners
+              ),
+              elevation: 8, // Add elevation for a lifted appearance
+            ),
+            child: const Text('Discover Magic'),
+          ),
+          // Image.network(
+          //   '$img',
+          //   width: 120,
+          //   height: 120,
+          // ),
+        ],
+      ),
     );
   }
-  Widget settings(){
+
+  Widget settings() {
     double sliderDiscreteValue = 10;
-    return  Row(
-      children:[
+    return Row(
+      children: [
         IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () => _showSettings(),
@@ -362,18 +325,35 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
   }
+
   Widget buildListView() {
     return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
       child: Wrap(
-        spacing: 15.0, // Adjust the spacing between items as needed
-        runSpacing: 15.0, // Adjust the run spacing as needed
+        spacing: 15.0,
+        runSpacing: 15.0,
         children: _ingredients.map((ingredient) {
           return Card(
-            color: Colors.orange[200],
+            elevation: 4.0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
             child: SizedBox(
-              width: 350, // Adjust the width of each card as needed
+              width: 350,
               child: ListTile(
-                title: Text(ingredient['title']),
+                contentPadding: const EdgeInsets.all(16),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      capitalizeFirstLetter(ingredient['title']),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
                 trailing: SizedBox(
                   width: 100,
                   child: Row(
