@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'mealDescription.dart';
-
 
 
 class AnotherScreen extends StatefulWidget {
@@ -25,7 +26,6 @@ class _AnotherScreenState extends State<AnotherScreen> {
   List<Map<String, dynamic>> ingredientList;
   List<String> meals = [];
   List<bool> isFavorite = [];
-
 
   @override
   void initState() {
@@ -61,7 +61,7 @@ class _AnotherScreenState extends State<AnotherScreen> {
     print(getTitles(ingredientList));
     final headers = {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer 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'
+      'Authorization': 'Bearer ${dotenv.env['token']}'
     };
     final body = json.encode(
       {
@@ -114,6 +114,7 @@ class _AnotherScreenState extends State<AnotherScreen> {
     setState(() {
       isLoading = false; // Set loading state to true
     });
+    print(responseText);
   }
 
   @override
@@ -174,7 +175,7 @@ class _AnotherScreenState extends State<AnotherScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => mealDescriptionScreen(ingredient: mealTitle),
+                    builder: (context) => mealDescriptionScreen(mealTitle:  meals[index].split('-')[0].trim(), ingredientList: ingredientList)
                   ),
                 );
               },

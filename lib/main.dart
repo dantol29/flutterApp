@@ -377,11 +377,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
-// Background Image
-// Image.asset(
-//   'assets/imag.png', // Replace with your image asset path
-//   fit: BoxFit.cover,
-//   width: double.infinity,
-//   height: double.infinity,
-// ),
